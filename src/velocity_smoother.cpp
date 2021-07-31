@@ -21,8 +21,8 @@ void VelocitySmoother::twistCallback(const geometry_msgs::Twist msg)
   // check velocity limit
   target_cmd_vel_.linear.x = msg.linear.x > 0.0 ? std::min(msg.linear.x, maximum_limit_vel_)
                                                 : std::max(msg.linear.x, minimum_limit_vel_);
-  target_cmd_vel_.angular.z = msg.angular.x > 0.0 ? std::min(msg.angular.x, maximum_limit_vel_)
-                                                  : std::max(msg.angular.x, minimum_limit_vel_);
+  target_cmd_vel_.angular.z = msg.angular.x > 0.0 ? std::min(msg.angular.z, maximum_limit_vel_)
+                                                  : std::max(msg.angular.z, minimum_limit_vel_);
 }
 
 void VelocitySmoother::timerCallback(const ros::TimerEvent & e)
