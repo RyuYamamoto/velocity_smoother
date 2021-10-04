@@ -9,7 +9,7 @@
     <param name="angular_gain" value="$(arg angular_gain)"/>
     <param name="maximum_limit_vel" value="$(arg maximum_limit_vel)"/>
     <param name="minimum_limit_vel" value="$(arg minimum_limit_vel)"/>
-    <remap from="~raw_cmd_vel" to="/cmd_vel"/>
+    <remap from="~raw_cmd_vel" to="/joy_cmd_vel"/>
     <remap from="~filtered_cmd_vel" to="/DoubleArmV7/cmd_vel"/>
   </node>
 </launch>
