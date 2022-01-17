@@ -2,10 +2,10 @@
 
 VelocitySmoother::VelocitySmoother() : Node("velocity_smoother")
 {
-  this->declare_parameter<double>("velocity_gain", velocity_gain_);
-  this->declare_parameter<double>("angular_gain", angular_gain_);
-  this->declare_parameter<double>("maximum_limit_vel", maximum_limit_vel_);
-  this->declare_parameter<double>("minimum_limit_vel", minimum_limit_vel_);
+  velocity_gain_ = this->declare_parameter<double>("velocity_gain");
+  angular_gain_ = this->declare_parameter<double>("angular_gain");
+  maximum_limit_vel_ = this->declare_parameter<double>("maximum_limit_vel");
+  minimum_limit_vel_ = this->declare_parameter<double>("minimum_limit_vel");
 
   raw_cmd_vel_subscriber_ = this->create_subscription<geometry_msgs::msg::Twist>(
     "raw_cmd_vel", 1, std::bind(&VelocitySmoother::twistCallback, this, std::placeholders::_1));
