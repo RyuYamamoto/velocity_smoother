@@ -1,22 +1,25 @@
 #include <velocity_smoother/velocity_smoother.h>
 
-VelocitySmoother::VelocitySmoother()
+VelocitySmoother::VelocitySmoother() : Node("velocity_smoother")
 {
-  pnh_.param<double>("velocity_gain", velocity_gain_, 1.0);
-  pnh_.param<double>("angular_gain", angular_gain_, 1.0);
-  pnh_.param<double>("maximum_limit_vel", maximum_limit_vel_, 0.5);
-  pnh_.param<double>("minimum_limit_vel", minimum_limit_vel_, -0.5);
+  this->declare_parameter<double>("velocity_gain", velocity_gain_);
+  this->declare_parameter<double>("angular_gain", angular_gain_);
+  this->declare_parameter<double>("maximum_limit_vel", maximum_limit_vel_);
+  this->declare_parameter<double>("minimum_limit_vel", minimum_limit_vel_);
 
-  raw_cmd_vel_subscriber_ =
-    pnh_.subscribe("raw_cmd_vel", 1, &VelocitySmoother::twistCallback, this);
-  filtered_cmd_vel_publisher_ = pnh_.advertise<geometry_msgs::Twist>("filtered_cmd_vel", 1);
+  raw_cmd_vel_subscriber_ = this->create_subscription<geometry_msgs::msg::Twist>(
+    "raw_cmd_vel", 1, std::bind(&VelocitySmoother::twistCallback, this, std::placeholders::_1));
+  filtered_cmd_vel_publisher_ =
+    this->create_publisher<geometry_msgs::msg::Twist>("filtered_cmd_vel", 1);
 
-  last_time_stamp_ = ros::Time::now();
+  last_time_stamp_ = rclcpp::Clock().now();
 
-  timer_ = nh_.createTimer(ros::Duration(0.01), &VelocitySmoother::timerCallback, this);
+  timer_ = this->create_wall_timer(
+    std::chrono::milliseconds(static_cast<int>(1000 * 0.01)),
+    std::bind(&VelocitySmoother::timerCallback, this));
 }
 
-void VelocitySmoother::twistCallback(const geometry_msgs::Twist msg)
+void VelocitySmoother::twistCallback(const geometry_msgs::msg::Twist msg)
 {
   // check velocity limit
   target_cmd_vel_.linear.x = msg.linear.x > 0.0 ? std::min(msg.linear.x, maximum_limit_vel_)
@@ -25,12 +28,12 @@ void VelocitySmoother::twistCallback(const geometry_msgs::Twist msg)
                                                   : std::max(msg.angular.z, minimum_limit_vel_);
 }
 
-void VelocitySmoother::timerCallback(const ros::TimerEvent & e)
+void VelocitySmoother::timerCallback()
 {
-  geometry_msgs::Twist cmd_vel;
+  geometry_msgs::msg::Twist cmd_vel;
 
-  ros::Time current_time_stamp = ros::Time::now();
-  const double dt = (current_time_stamp - last_time_stamp_).toSec();
+  rclcpp::Time current_time_stamp = rclcpp::Clock().now();
+  const double dt = (current_time_stamp - last_time_stamp_).seconds();
 
   const double delta_linear_vel =
     velocity_gain_ * (target_cmd_vel_.linear.x - last_cmd_vel_.linear.x);
@@ -40,7 +43,7 @@ void VelocitySmoother::timerCallback(const ros::TimerEvent & e)
   cmd_vel.linear.x = delta_linear_vel * dt + last_cmd_vel_.linear.x;
   cmd_vel.angular.z = delta_angular_vel * dt + last_cmd_vel_.angular.z;
 
-  filtered_cmd_vel_publisher_.publish(cmd_vel);
+  filtered_cmd_vel_publisher_->publish(cmd_vel);
 
   last_cmd_vel_ = cmd_vel;
   last_time_stamp_ = current_time_stamp;
